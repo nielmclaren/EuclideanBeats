@@ -54,29 +54,7 @@ void setup() {
   notes = new ArrayList<Integer>();
 
   setupControlP5();
-  /*
-  println("Bjorklund");
-  Bjorklund b = new Bjorklund(8, 5);
-  ArrayList<Integer> pattern = b.get();
-  println("pattern: ");
-  for (Integer i : pattern) {
-    print(i + " ");
-  }
-  println();
-  */
-
-  euclid(8, 5);
-
   reset();
-}
-
-int euclid(int m, int k) {
-  println(m, k);
-  if (k == 0) {
-    return m;
-  }
-  int x = euclid(k, m % k);
-  return x;
 }
 
 void reset() {
