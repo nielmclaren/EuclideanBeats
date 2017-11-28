@@ -15,8 +15,8 @@ int prevInnerBeat;
 int prevKickBeat;
 
 public int framesPerBar;
-public int innerBeatsPerBar;
 public int outerBeatsPerBar;
+public int innerBeatsPerBar;
 public int kickBeatsPerBar;
 
 ArrayList<Integer> notes;
@@ -27,10 +27,14 @@ color outerHighlightColor = #fd9242;
 color innerColor = #e84ed0;
 color innerActiveColor = #e18bc8;
 color innerHighlightColor = #eab7e2;
+color kickColor = #0264c5;
+color kickHighlightColor = #019fba;
 
 SoundFile lowSound;
 SoundFile highSound;
 SoundFile kickSound;
+
+FileNamer fileNamer;
 
 void setup() {
   size(800, 800, P2D);
@@ -47,19 +51,47 @@ void setup() {
   isKickSound = false;
 
   framesPerBar = 128;
-  innerBeatsPerBar = 16;
   outerBeatsPerBar = 5;
+  innerBeatsPerBar = 16;
   kickBeatsPerBar = 4;
 
   notes = new ArrayList<Integer>();
 
   setupControlP5();
+
+  fileNamer = new FileNamer("output/export", "png");
+
   reset();
 }
 
 void reset() {
   notes = generateNotes();
   currFrame = 0;
+  prevOuterBeat = -1;
+  prevInnerBeat = -1;
+  prevKickBeat = -1;
+}
+
+ArrayList<Integer> generateNotes() {
+  if (innerBeatsPerBar < outerBeatsPerBar) {
+    int temp = innerBeatsPerBar;
+    innerBeatsPerBar = outerBeatsPerBar;
+    outerBeatsPerBar = temp;
+  }
+
+  float noteLength = (float)innerBeatsPerBar / outerBeatsPerBar;
+  int beatIndex = 0;
+  ArrayList<Integer> resultNotes = new ArrayList<Integer>();
+  while (beatIndex < outerBeatsPerBar) {
+    float idealNotePosition = (float)beatIndex * noteLength;
+    int optionA = floor(idealNotePosition);
+    int optionB = ceil(idealNotePosition);
+    int notePosition = chooseNotePosition(idealNotePosition, optionA, optionB);
+    resultNotes.add(notePosition);
+    beatIndex++;
+  }
+
+  return resultNotes;
 }
 
 int chooseNotePosition(float ideal, int optionA, int optionB) {
@@ -83,15 +115,6 @@ void setupControlP5() {
     .setValue(128);
   currY += 20;
 
-  cp5.addSlider("innerBeatsPerBar")
-    .setBroadcast(false)
-    .setRange(1, 20)
-    .setPosition(20, currY)
-    .setSize(100, 10)
-    .setBroadcast(true)
-    .setValue(16);
-  currY += 20;
-
   cp5.addSlider("outerBeatsPerBar")
     .setBroadcast(false)
     .setRange(1, 20)
@@ -99,6 +122,15 @@ void setupControlP5() {
     .setSize(100, 10)
     .setBroadcast(true)
     .setValue(5);
+  currY += 20;
+
+  cp5.addSlider("innerBeatsPerBar")
+    .setBroadcast(false)
+    .setRange(1, 20)
+    .setPosition(20, currY)
+    .setSize(100, 10)
+    .setBroadcast(true)
+    .setValue(16);
   currY += 20;
 
   cp5.addSlider("kickBeatsPerBar")
@@ -134,39 +166,52 @@ void draw() {
   int innerBeat = floor(currFrame / ((float)framesPerBar / innerBeatsPerBar));
   int kickBeat = floor(currFrame / ((float)framesPerBar / kickBeatsPerBar));
 
-  if (isLowSound && outerBeat != prevOuterBeat) {
-    lowSound.play();
-  }
-  if (isHighSound && innerBeat != prevInnerBeat && isNote(innerBeat)) {
-    highSound.play();
-  }
-  if (isKickSound && kickBeat != prevKickBeat) {
-    kickSound.play();
+  if (!isPaused) {
+    if (isLowSound && outerBeat != prevOuterBeat) {
+      lowSound.play();
+    }
+    if (isHighSound && innerBeat != prevInnerBeat && isNote(innerBeat)) {
+      highSound.play();
+    }
+    if (isKickSound && kickBeat != prevKickBeat) {
+      kickSound.play();
+    }
   }
 
-  background(backgroundColor);
-
+  g.background(backgroundColor);
   g.noStroke();
-  g.fill(outerColor);
-  drawBeats(g, outerBeatsPerBar, 350);
+
+  g.fill(kickColor);
+  drawBeats(g, kickBeatsPerBar, 900);
 
   if (showCurrentBeat) {
-    g.fill(outerHighlightColor);
-    drawBeat(g, outerBeat, outerBeatsPerBar, 330);
+    g.fill(kickHighlightColor);
+    drawBeat(g, kickBeat, kickBeatsPerBar, 800);
   }
 
   g.fill(backgroundColor);
-  drawCircle(g, 230);
+  drawCircle(g, 520);
+
+  g.fill(outerColor);
+  drawBeats(g, outerBeatsPerBar, 500);
+
+  if (showCurrentBeat) {
+    g.fill(outerHighlightColor);
+    drawBeat(g, outerBeat, outerBeatsPerBar, 480);
+  }
+
+  g.fill(backgroundColor);
+  drawCircle(g, 380);
 
   g.fill(innerColor);
-  drawBeats(g, innerBeatsPerBar, 210);
+  drawBeats(g, innerBeatsPerBar, 360);
 
   g.fill(innerActiveColor);
-  drawNotes(g, innerBeatsPerBar, 200);
+  drawNotes(g, innerBeatsPerBar, 350);
 
   if (showCurrentBeat) {
     g.fill(innerHighlightColor);
-    drawBeat(g, innerBeat, innerBeatsPerBar, 200);
+    drawBeat(g, innerBeat, innerBeatsPerBar, 350);
   }
 
   if (!isPaused) {
@@ -223,33 +268,22 @@ void drawBeat(PGraphics g, int beat, int numBeats, float radius) {
   g.popMatrix();
 }
 
-
-ArrayList<Integer> generateNotes() {
-  if (innerBeatsPerBar < outerBeatsPerBar) {
-    int temp = innerBeatsPerBar;
-    innerBeatsPerBar = outerBeatsPerBar;
-    outerBeatsPerBar = temp;
-  }
-
-  float noteLength = (float)innerBeatsPerBar / outerBeatsPerBar;
-  float error = 0;
-  int beatIndex = 0;
-  ArrayList<Integer> resultNotes = new ArrayList<Integer>();
-  while (beatIndex < outerBeatsPerBar) {
-    float idealNotePosition = (float)beatIndex * noteLength;
-    int optionA = floor(idealNotePosition);
-    int optionB = ceil(idealNotePosition);
-    int notePosition = chooseNotePosition(idealNotePosition, optionA, optionB);
-    resultNotes.add(notePosition);
-
-    error += notePosition - idealNotePosition;
-
-    beatIndex++;
-  }
-
-  return resultNotes;
+void stop() {
+  isPaused = true;
+  reset();
 }
 
+public void innerBeatsPerBar(int value) {
+  stop();
+}
+
+public void outerBeatsPerBar(int value) {
+  stop();
+}
+
+public void kickBeatsPerBar(int value) {
+  stop();
+}
 
 void keyReleased() {
   switch (key) {
@@ -261,6 +295,12 @@ void keyReleased() {
       break;
     case ' ':
       isPaused = !isPaused;
+      break;
+    case 'r':
+      save(savePath(fileNamer.next()));
+      break;
+    case 's':
+      stop();
       break;
   }
 }
