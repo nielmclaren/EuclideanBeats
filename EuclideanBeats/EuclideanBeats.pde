@@ -3,8 +3,8 @@ import processing.sound.*;
 
 boolean isPaused;
 boolean showCurrentBeat;
-boolean isLowSound;
-boolean isHighSound;
+boolean isOuterSound;
+boolean isInnerSound;
 boolean isKickSound;
 
 ControlP5 cp5;
@@ -30,8 +30,8 @@ color innerHighlightColor = #eab7e2;
 color kickColor = #0264c5;
 color kickHighlightColor = #019fba;
 
-SoundFile lowSound;
-SoundFile highSound;
+SoundFile outerSound;
+SoundFile innerSound;
 SoundFile kickSound;
 
 FileNamer fileNamer;
@@ -39,15 +39,15 @@ FileNamer fileNamer;
 void setup() {
   size(800, 800, P2D);
 
-  lowSound = new SoundFile(this, "90016__marleneayni__clavelow.wav");
-  highSound = new SoundFile(this, "90017__marleneayni__clavehi.wav");
+  outerSound = new SoundFile(this, "90016__marleneayni__clavelow.wav");
+  innerSound = new SoundFile(this, "90017__marleneayni__clavehi.wav");
   kickSound = new SoundFile(this, "244194__cima__kick.wav");
   kickSound.amp(0.5);
 
   isPaused = false;
   showCurrentBeat = true;
-  isLowSound = false;
-  isHighSound = false;
+  isOuterSound = false;
+  isInnerSound = false;
   isKickSound = false;
 
   framesPerBar = 128;
@@ -142,13 +142,13 @@ void setupControlP5() {
     .setValue(4);
   currY += 20;
 
-  cp5.addToggle("isLowSound")
+  cp5.addToggle("isOuterSound")
     .setPosition(20, currY)
     .setSize(15, 15)
     .setState(false);
   currY += 30;
 
-  cp5.addToggle("isHighSound")
+  cp5.addToggle("isInnerSound")
     .setPosition(20, currY)
     .setSize(15, 15)
     .setState(false);
@@ -167,11 +167,11 @@ void draw() {
   int kickBeat = floor(currFrame / ((float)framesPerBar / kickBeatsPerBar));
 
   if (!isPaused) {
-    if (isLowSound && outerBeat != prevOuterBeat) {
-      lowSound.play();
+    if (isOuterSound && outerBeat != prevOuterBeat) {
+      outerSound.play();
     }
-    if (isHighSound && innerBeat != prevInnerBeat && isNote(innerBeat)) {
-      highSound.play();
+    if (isInnerSound && innerBeat != prevInnerBeat && isNote(innerBeat)) {
+      innerSound.play();
     }
     if (isKickSound && kickBeat != prevKickBeat) {
       kickSound.play();
@@ -219,11 +219,11 @@ void draw() {
     if (currFrame >= framesPerBar) {
       currFrame = 0;
     }
-  }
 
-  prevOuterBeat = outerBeat;
-  prevInnerBeat = innerBeat;
-  prevKickBeat = kickBeat;
+    prevOuterBeat = outerBeat;
+    prevInnerBeat = innerBeat;
+    prevKickBeat = kickBeat;
+  }
 }
 
 void drawCircle(PGraphics g, float radius) {
@@ -274,14 +274,17 @@ void stop() {
 }
 
 public void innerBeatsPerBar(int value) {
+  innerBeatsPerBar = value;
   stop();
 }
 
 public void outerBeatsPerBar(int value) {
+  outerBeatsPerBar = value;
   stop();
 }
 
 public void kickBeatsPerBar(int value) {
+  kickBeatsPerBar = value;
   stop();
 }
 
