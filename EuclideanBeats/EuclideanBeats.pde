@@ -32,39 +32,34 @@ void setup() {
 
   setupControlP5();
 
+  /*
+  println("Bjorklund");
+  Bjorklund b = new Bjorklund(8, 5);
+  ArrayList<Integer> pattern = b.get();
+  println("pattern: ");
+  for (Integer i : pattern) {
+    print(i + " ");
+  }
+  println();
+  */
+
+  euclid(8, 5);
+
   reset();
+}
+
+int euclid(int m, int k) {
+  println(m, k);
+  if (k == 0) {
+    return m;
+  }
+  int x = euclid(k, m % k);
+  return x;
 }
 
 void reset() {
   notes = generateNotes();
   currFrame = 0;
-}
-
-ArrayList<Integer> generateNotes() {
-  if (innerBeatsPerBar < outerBeatsPerBar) {
-    int temp = innerBeatsPerBar;
-    innerBeatsPerBar = outerBeatsPerBar;
-    outerBeatsPerBar = temp;
-  }
-
-  float noteLength = (float)innerBeatsPerBar / outerBeatsPerBar;
-  float error = 0;
-  int beatIndex = 0;
-  ArrayList<Integer> resultNotes = new ArrayList<Integer>();
-  while (beatIndex < outerBeatsPerBar) {
-    float idealNotePosition = (float)beatIndex * noteLength;
-    int optionA = floor(idealNotePosition);
-    int optionB = ceil(idealNotePosition);
-    int notePosition = chooseNotePosition(optionA, optionB);
-    println(beatIndex, noteLength, error, idealNotePosition, optionA, optionB, notePosition);
-    resultNotes.add(notePosition);
-
-    error += notePosition - idealNotePosition;
-
-    beatIndex++;
-  }
-
-  return resultNotes;
 }
 
 int chooseNotePosition(int optionA, int optionB) {
@@ -173,6 +168,34 @@ void drawBeat(PGraphics g, int beat, int numBeats, float radius) {
 
   g.popMatrix();
 }
+
+
+ArrayList<Integer> generateNotes() {
+  if (innerBeatsPerBar < outerBeatsPerBar) {
+    int temp = innerBeatsPerBar;
+    innerBeatsPerBar = outerBeatsPerBar;
+    outerBeatsPerBar = temp;
+  }
+
+  float noteLength = (float)innerBeatsPerBar / outerBeatsPerBar;
+  float error = 0;
+  int beatIndex = 0;
+  ArrayList<Integer> resultNotes = new ArrayList<Integer>();
+  while (beatIndex < outerBeatsPerBar) {
+    float idealNotePosition = (float)beatIndex * noteLength;
+    int optionA = floor(idealNotePosition);
+    int optionB = ceil(idealNotePosition);
+    int notePosition = chooseNotePosition(optionA, optionB);
+    resultNotes.add(notePosition);
+
+    error += notePosition - idealNotePosition;
+
+    beatIndex++;
+  }
+
+  return resultNotes;
+}
+
 
 void keyReleased() {
   switch (key) {
