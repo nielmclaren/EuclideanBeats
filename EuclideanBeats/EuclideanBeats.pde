@@ -1,28 +1,74 @@
 import controlP5.*;
 
+boolean isPaused;
+boolean showCurrentBeat;
 
 ControlP5 cp5;
 
-int[] beats = {1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0};
-
+int currFrame;
 public int framesPerBar;
 public int innerBeatsPerBar;
 public int outerBeatsPerBar;
+
+ArrayList<Integer> notes;
 
 color backgroundColor = #0000ce;
 color outerColor = #f94a45;
 color outerHighlightColor = #fd9242;
 color innerColor = #e84ed0;
+color innerActiveColor = #e18bc8;
 color innerHighlightColor = #eab7e2;
 
 void setup() {
   size(800, 800, P2D);
 
+  isPaused = false;
+
   framesPerBar = 128;
   innerBeatsPerBar = 16;
   outerBeatsPerBar = 5;
 
+  notes = new ArrayList<Integer>();
+
   setupControlP5();
+
+  reset();
+}
+
+void reset() {
+  notes = generateNotes();
+  currFrame = 0;
+}
+
+ArrayList<Integer> generateNotes() {
+  if (innerBeatsPerBar < outerBeatsPerBar) {
+    int temp = innerBeatsPerBar;
+    innerBeatsPerBar = outerBeatsPerBar;
+    outerBeatsPerBar = temp;
+  }
+
+  float noteLength = (float)innerBeatsPerBar / outerBeatsPerBar;
+  float error = 0;
+  int beatIndex = 0;
+  ArrayList<Integer> resultNotes = new ArrayList<Integer>();
+  while (beatIndex < outerBeatsPerBar) {
+    float idealNotePosition = (float)beatIndex * noteLength;
+    int optionA = floor(idealNotePosition);
+    int optionB = ceil(idealNotePosition);
+    int notePosition = chooseNotePosition(optionA, optionB);
+    println(beatIndex, noteLength, error, idealNotePosition, optionA, optionB, notePosition);
+    resultNotes.add(notePosition);
+
+    error += notePosition - idealNotePosition;
+
+    beatIndex++;
+  }
+
+  return resultNotes;
+}
+
+int chooseNotePosition(int optionA, int optionB) {
+  return random(1) < 0.5 ? optionA : optionB;
 }
 
 void setupControlP5() {
@@ -59,8 +105,8 @@ void setupControlP5() {
 }
 
 void draw() {
-  int outerBeat = floor((frameCount % framesPerBar) / ((float)framesPerBar / outerBeatsPerBar));
-  int innerBeat = floor((frameCount % framesPerBar) / ((float)framesPerBar / innerBeatsPerBar));
+  int outerBeat = floor(currFrame / ((float)framesPerBar / outerBeatsPerBar));
+  int innerBeat = floor(currFrame / ((float)framesPerBar / innerBeatsPerBar));
 
   background(backgroundColor);
 
@@ -68,8 +114,10 @@ void draw() {
   g.fill(outerColor);
   drawBeats(g, outerBeatsPerBar, 350);
 
-  g.fill(outerHighlightColor);
-  drawBeat(g, outerBeat, outerBeatsPerBar, 330);
+  if (showCurrentBeat) {
+    g.fill(outerHighlightColor);
+    drawBeat(g, outerBeat, outerBeatsPerBar, 330);
+  }
 
   g.fill(backgroundColor);
   drawCircle(g, 230);
@@ -77,8 +125,20 @@ void draw() {
   g.fill(innerColor);
   drawBeats(g, innerBeatsPerBar, 210);
 
-  g.fill(innerHighlightColor);
-  drawBeat(g, innerBeat, innerBeatsPerBar, 200);
+  g.fill(innerActiveColor);
+  drawActiveBeats(g, innerBeatsPerBar, 200);
+
+  if (showCurrentBeat) {
+    g.fill(innerHighlightColor);
+    drawBeat(g, innerBeat, innerBeatsPerBar, 200);
+  }
+
+  if (!isPaused) {
+    currFrame++;
+    if (currFrame >= framesPerBar) {
+      currFrame = 0;
+    }
+  }
 }
 
 void drawCircle(PGraphics g, float radius) {
@@ -88,6 +148,12 @@ void drawCircle(PGraphics g, float radius) {
 void drawBeats(PGraphics g, int numBeats, float radius) {
   for (int i = 0; i < numBeats; i++) {
     drawBeat(g, i, numBeats, radius);
+  }
+}
+
+void drawActiveBeats(PGraphics g, int numBeats, float radius) {
+  for (Integer beat : notes) {
+    drawBeat(g, beat, numBeats, radius);
   }
 }
 
@@ -106,4 +172,18 @@ void drawBeat(PGraphics g, int beat, int numBeats, float radius) {
   g.arc(centerOffset.x, centerOffset.y, radius - offset, radius - offset, start, end);
 
   g.popMatrix();
+}
+
+void keyReleased() {
+  switch (key) {
+    case 't':
+      showCurrentBeat = !showCurrentBeat;
+      break;
+    case 'e':
+      reset();
+      break;
+    case ' ':
+      isPaused = !isPaused;
+      break;
+  }
 }
