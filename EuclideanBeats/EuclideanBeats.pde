@@ -1,14 +1,23 @@
 import controlP5.*;
+import processing.sound.*;
 
 boolean isPaused;
 boolean showCurrentBeat;
+boolean isLowSound;
+boolean isHighSound;
+boolean isKickSound;
 
 ControlP5 cp5;
 
 int currFrame;
+int prevOuterBeat;
+int prevInnerBeat;
+int prevKickBeat;
+
 public int framesPerBar;
 public int innerBeatsPerBar;
 public int outerBeatsPerBar;
+public int kickBeatsPerBar;
 
 ArrayList<Integer> notes;
 
@@ -19,19 +28,32 @@ color innerColor = #e84ed0;
 color innerActiveColor = #e18bc8;
 color innerHighlightColor = #eab7e2;
 
+SoundFile lowSound;
+SoundFile highSound;
+SoundFile kickSound;
+
 void setup() {
   size(800, 800, P2D);
 
+  lowSound = new SoundFile(this, "90016__marleneayni__clavelow.wav");
+  highSound = new SoundFile(this, "90017__marleneayni__clavehi.wav");
+  kickSound = new SoundFile(this, "244194__cima__kick.wav");
+  kickSound.amp(0.5);
+
   isPaused = false;
+  showCurrentBeat = true;
+  isLowSound = false;
+  isHighSound = false;
+  isKickSound = false;
 
   framesPerBar = 128;
   innerBeatsPerBar = 16;
   outerBeatsPerBar = 5;
+  kickBeatsPerBar = 4;
 
   notes = new ArrayList<Integer>();
 
   setupControlP5();
-
   /*
   println("Bjorklund");
   Bjorklund b = new Bjorklund(8, 5);
@@ -62,8 +84,11 @@ void reset() {
   currFrame = 0;
 }
 
-int chooseNotePosition(int optionA, int optionB) {
-  return random(1) < 0.5 ? optionA : optionB;
+int chooseNotePosition(float ideal, int optionA, int optionB) {
+  if (abs(optionA - ideal) < abs(optionB - ideal)) {
+    return optionA;
+  }
+  return optionB;
 }
 
 void setupControlP5() {
@@ -97,11 +122,49 @@ void setupControlP5() {
     .setBroadcast(true)
     .setValue(5);
   currY += 20;
+
+  cp5.addSlider("kickBeatsPerBar")
+    .setBroadcast(false)
+    .setRange(1, 20)
+    .setPosition(20, currY)
+    .setSize(100, 10)
+    .setBroadcast(true)
+    .setValue(4);
+  currY += 20;
+
+  cp5.addToggle("isLowSound")
+    .setPosition(20, currY)
+    .setSize(15, 15)
+    .setState(false);
+  currY += 30;
+
+  cp5.addToggle("isHighSound")
+    .setPosition(20, currY)
+    .setSize(15, 15)
+    .setState(false);
+  currY += 30;
+
+  cp5.addToggle("isKickSound")
+    .setPosition(20, currY)
+    .setSize(15, 15)
+    .setState(false);
+  currY += 30;
 }
 
 void draw() {
   int outerBeat = floor(currFrame / ((float)framesPerBar / outerBeatsPerBar));
   int innerBeat = floor(currFrame / ((float)framesPerBar / innerBeatsPerBar));
+  int kickBeat = floor(currFrame / ((float)framesPerBar / kickBeatsPerBar));
+
+  if (isLowSound && outerBeat != prevOuterBeat) {
+    lowSound.play();
+  }
+  if (isHighSound && innerBeat != prevInnerBeat && isNote(innerBeat)) {
+    highSound.play();
+  }
+  if (isKickSound && kickBeat != prevKickBeat) {
+    kickSound.play();
+  }
 
   background(backgroundColor);
 
@@ -121,7 +184,7 @@ void draw() {
   drawBeats(g, innerBeatsPerBar, 210);
 
   g.fill(innerActiveColor);
-  drawActiveBeats(g, innerBeatsPerBar, 200);
+  drawNotes(g, innerBeatsPerBar, 200);
 
   if (showCurrentBeat) {
     g.fill(innerHighlightColor);
@@ -134,6 +197,10 @@ void draw() {
       currFrame = 0;
     }
   }
+
+  prevOuterBeat = outerBeat;
+  prevInnerBeat = innerBeat;
+  prevKickBeat = kickBeat;
 }
 
 void drawCircle(PGraphics g, float radius) {
@@ -146,7 +213,16 @@ void drawBeats(PGraphics g, int numBeats, float radius) {
   }
 }
 
-void drawActiveBeats(PGraphics g, int numBeats, float radius) {
+boolean isNote(int beat) {
+  for (Integer note : notes) {
+    if (beat == note) {
+      return true;
+    }
+  }
+  return false;
+}
+
+void drawNotes(PGraphics g, int numBeats, float radius) {
   for (Integer beat : notes) {
     drawBeat(g, beat, numBeats, radius);
   }
@@ -185,7 +261,7 @@ ArrayList<Integer> generateNotes() {
     float idealNotePosition = (float)beatIndex * noteLength;
     int optionA = floor(idealNotePosition);
     int optionB = ceil(idealNotePosition);
-    int notePosition = chooseNotePosition(optionA, optionB);
+    int notePosition = chooseNotePosition(idealNotePosition, optionA, optionB);
     resultNotes.add(notePosition);
 
     error += notePosition - idealNotePosition;
