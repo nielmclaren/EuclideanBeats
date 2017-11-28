@@ -1,8 +1,13 @@
+import controlP5.*;
+
+
+ControlP5 cp5;
 
 int[] beats = {1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0};
-int framesPerBar;
-int innerBeatsPerBar;
-int outerBeatsPerBar;
+
+public int framesPerBar;
+public int innerBeatsPerBar;
+public int outerBeatsPerBar;
 
 color backgroundColor = #0000ce;
 color outerColor = #f94a45;
@@ -16,11 +21,46 @@ void setup() {
   framesPerBar = 128;
   innerBeatsPerBar = 16;
   outerBeatsPerBar = 5;
+
+  setupControlP5();
+}
+
+void setupControlP5() {
+  int currY = 20;
+
+  cp5 = new ControlP5(this);
+
+  cp5.addSlider("framesPerBar")
+    .setBroadcast(false)
+    .setRange(0, 1000)
+    .setPosition(20, currY)
+    .setSize(200, 10)
+    .setBroadcast(true)
+    .setValue(128);
+  currY += 20;
+
+  cp5.addSlider("innerBeatsPerBar")
+    .setBroadcast(false)
+    .setRange(1, 20)
+    .setPosition(20, currY)
+    .setSize(100, 10)
+    .setBroadcast(true)
+    .setValue(16);
+  currY += 20;
+
+  cp5.addSlider("outerBeatsPerBar")
+    .setBroadcast(false)
+    .setRange(1, 20)
+    .setPosition(20, currY)
+    .setSize(100, 10)
+    .setBroadcast(true)
+    .setValue(5);
+  currY += 20;
 }
 
 void draw() {
-  int outerBeat = floor((frameCount % framesPerBar) / (framesPerBar / outerBeatsPerBar));
-  int innerBeat = floor((frameCount % framesPerBar) / (framesPerBar / innerBeatsPerBar));
+  int outerBeat = floor((frameCount % framesPerBar) / ((float)framesPerBar / outerBeatsPerBar));
+  int innerBeat = floor((frameCount % framesPerBar) / ((float)framesPerBar / innerBeatsPerBar));
 
   background(backgroundColor);
 
